@@ -4,8 +4,8 @@ import pandas as pd
 import datetime
 import re
 
-def get_json():
-    url = 'http://incrm.ru/export-tred/ExportToSite.svc/ExportToTf/json'
+def get_json(): 
+    url = 'http://incrm.ru/export-tred/ExportToSite.svc/ExportToTf/json' #адрес JSON-данных застройщика по всем ЖК. Данные только по свободным квартирам.
     r = requests.get(url)
     json_data=json.loads(r.text)
     data_frame = pd.DataFrame.from_records(json_data,columns = ["ArticleID", "Article", "Number", "StatusCode", "StatusCodeName", "Quantity", "Rooms", "Sum",
@@ -19,12 +19,12 @@ def maintain_df(data_frame):
                  'Quantity': 'Площадь',
                  'Sum': 'Цена', 'Decoration': 'Отделка'})
     data_frame = data_frame.assign(domain=data_frame['Код объекта'])
-    data_frame = data_frame[data_frame['domain'].str.contains('ОБ')]
+    data_frame = data_frame[data_frame['domain'].str.contains('ОБ')] #Выбираем данные только по ЖК Облака. 
     data_frame = data_frame.drop(
         columns=['ArticleID', 'Rooms', 'StatusCode', 'Finishing', 'SeparateEntrance', 'RoofExit', '2level',
-                 'TerrasesCount', 'domain'])
+                 'TerrasesCount', 'domain']) #Отбрасываем колонки, которые пока не будут использоваться
     data_frame['Цена за метр'] = data_frame['Цена'].astype(float) / data_frame['Площадь'].astype(float) #вычисляем цену за кв. метр
-    data_frame['Цена'] = data_frame['Цена'].astype(float)
+    data_frame['Цена'] = data_frame['Цена'].astype(float) #Преобразуем данные во float
     data_frame['Площадь'] = data_frame['Площадь'].astype(float)
     return data_frame
 
@@ -105,7 +105,7 @@ def compare_df(new_df): # Смотрим а что же изменилось п�
         if (data.loc[i, 'Статус_x'] != data.loc[i, 'Статус_y']):
             data.loc[i, 'Статус_отличия'] = str(data.loc[i, 'Статус_отличия']) + "Изменение статуса на " + str(data.loc[i, 'Статус_x']) + "(было " + str(data.loc[i, 'Статус_y']) + ")"
     data2 = data.loc[(data['Статус_отличия']!="")]
-    writer = pd.ExcelWriter('Otliciya ' + datetime.date.today().strftime("%Y-%m-%d") + '.xlsx')
+    writer = pd.ExcelWriter('Otliciya ' + datetime.date.today().strftime("%Y-%m-%d") + '.xlsx') #Формируем файл с отличиями
     data2 = data2.rename(columns={'Цена_x':'Цена стало','Цена_y':'Цена было','Статус_x':'Статус стало','Статус_y':'Статус было','Условный номер_x':'Условный номер'})
     data2.to_excel(writer, columns=['Код объекта','Стояк','Условный номер','Статус_отличия','Цена стало','Цена было','Разница'],index=False,float_format='%.2f')
     writer.save()
@@ -118,7 +118,7 @@ if __name__ == '__main__':
         writer = pd.ExcelWriter('Summary 2019-01-16.xlsx')
         data.to_excel(writer,
                       columns=['Код объекта', 'Условный номер', 'Статус', 'Площадь', 'Цена', 'Отделка_y', 'Дата договора'],
-                      index=False)
+                      index=False) #Записываем данные для будущих сравнений
         writer.save()
         compare_df(data)
         print('Всё готово!')
