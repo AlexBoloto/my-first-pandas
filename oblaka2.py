@@ -60,8 +60,8 @@ def mer(data_frame):
     merge_df_1.replace({'Доступность к продаже': {'Оценка': 3, 'Ус. Бронь': 1, 'Продажа': 0, 'Свободно': 1,
                                                   'Стр. Резерв': 3, 'Пл. Бронь': 2}},inplace=True)
     merge_df_1.drop(columns=['Стоимость продажи','Отделка_x','Сумма сделки (Заявка устной брони) (Заявка)','Номер квартиры','Количество','Статус'])
-    data_site_flats = pd.read_excel('\\\\192.168.10.123\\it\\Иван\\ИВАН\\БСА-ДОМ исходники\\exp\\zhk_oblaka.xlsx',sheet_name=0)
-    data_site_aparts = pd.read_excel('\\\\192.168.10.123\\it\\Иван\\ИВАН\\БСА-ДОМ исходники\\exp\\zhk_oblaka.xlsx',sheet_name=1)
+    data_site_flats = pd.read_excel('\\\\192.168.10.123\\it\\Иван\\ИВАН\\БСА-ДОМ исходники\\exp\\zhk_oblaka_.xlsx',sheet_name=0)
+    data_site_aparts = pd.read_excel('\\\\192.168.10.123\\it\\Иван\\ИВАН\\БСА-ДОМ исходники\\exp\\zhk_oblaka_.xlsx',sheet_name=1)
     df2 = pd.merge(merge_df_1[merge_df_1['Код объекта'].str.contains('ОБ-КВ')],data_site_flats,how='left',on='Условный номер')
     df2['площадь        ']=df2['Площадь']
     df2['Доступность к продаже_x'] = df2['Доступность к продаже_y']
@@ -115,13 +115,39 @@ def compare_df(new_df):
     data2.to_excel(writer, columns=['Код объекта','Стояк','Условный номер','Статус_отличия','Цена стало','Цена было','Разница'],index=False,float_format='%.2f')
     writer.save()
     print('Файл с отличиями сформирован')
+
+def sverka(oblaka_price):
+    oblaka_price.drop(columns=['Дата договора','Количество','Стоимость продажи','Состояние объекта','Сумма сделки (Заявка устной брони) (Заявка)','Номер квартиры','Статус','Отделка_x'],inplace=True)
+    grishin_price = pd.read_excel('grishin_price.xlsx', usecols=[0, 8, 10, 9])
+    grishin_price = grishin_price.rename(
+        columns={'Стоимость продажи': 'Grishin_price', 'Отделка': 'Grishin_decoration',
+                 'Вывод в продажу 1/0': 'Grishin_status'})
+    grishin_price['Grishin_decoration'].replace(['\w/\w', '\wернов*', '\wистов*'], [0, 1, 2], inplace=True, regex=True)
+    check = pd.merge(oblaka_price, grishin_price, how='inner', on='Код объекта')
+    for i in range(len(check)):
+        if (pd.notnull(check.loc[i, 'Цена'])):
+            check.loc[i, 'Price_differ'] = round(check.loc[i, 'Grishin_price'] - check.loc[i, 'Цена'], 0)
+        check.loc[i, 'Status_differ'] = check.loc[i, 'Grishin_status'] - check.loc[i, 'Доступность к продаже']
+        check.loc[i, 'Decoration_differ'] = check.loc[i, 'Grishin_decoration'] - check.loc[i, 'Отделка_y']
+    check = check[check['Price_differ'].notnull()]
+    check = check[
+        (abs(check['Price_differ']) > 1) | (abs(check['Status_differ']) > 0) | (abs(check['Decoration_differ']) > 0)]
+    writer = pd.ExcelWriter('\\\\192.168.10.123\\it\\Иван\\ИВАН\\БСА-ДОМ исходники\\exp\\Сверка Облаков.xlsx')
+    check.to_excel(writer, '1', columns=['Код объекта', 'Секция', 'Стояк', 'Условный номер', 'Площадь', 'Комнат',
+                                         'Доступность к продаже', 'Цена', 'Цена за метр', 'Отделка_y', 'Grishin_price',
+                                         'Price_differ', 'Grishin_status', 'Status_differ', 'Decoration_differ'],
+                   index=False)
+    writer.save()
+    print('Сверка сформирована')
+
 if __name__ == '__main__':
     try:
         data = get_json()  # берём данные из CRM застройщика и перобразуем их в DataFrame
         data = maintain_df(
             data)  # обрабатываем DataFrame (выбираем только Облака, преобразуем данные в float и отсеиваем лишние колонки)
         data = mer(data)  # прводим "левое" слияние с выгрузкой Васильева
-        compare_df(data)
+        sverka(data)
+        #compare_df(data)
         print('Всё готово!')
         input('Для продолжения нажми Enter')
     except SyntaxError:
