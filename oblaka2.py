@@ -148,7 +148,7 @@ if __name__ == '__main__':
         data = maintain_df(
             data)  # обрабатываем DataFrame (выбираем только Облака, преобразуем данные в float и отсеиваем лишние колонки)
         data = mer(data)  # прводим "левое" слияние с выгрузкой Васильева
-        #sverka(data)
+        sverka(data)
         #compare_df(data)
         print('Всё готово!')
         input('Для продолжения нажми Enter')
