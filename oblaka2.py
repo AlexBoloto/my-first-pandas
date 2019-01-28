@@ -63,13 +63,15 @@ def mer(data_frame):
     data_site_flats = pd.read_excel('\\\\192.168.10.123\\it\\Иван\\ИВАН\\БСА-ДОМ исходники\\exp\\zhk_oblaka_.xlsx',sheet_name=0)
     data_site_aparts = pd.read_excel('\\\\192.168.10.123\\it\\Иван\\ИВАН\\БСА-ДОМ исходники\\exp\\zhk_oblaka_.xlsx',sheet_name=1)
     df2 = pd.merge(merge_df_1[merge_df_1['Код объекта'].str.contains('ОБ-КВ')],data_site_flats,how='left',on='Условный номер')
+    df2.to_csv('DF2.csv', sep=';', encoding='cp1251', decimal=',', float_format='%.2f', index=False)
     df2['площадь        ']=df2['Площадь']
-    df2['Доступность к продаже_x'] = df2['Доступность к продаже_y']
+    df2['Доступность к продаже_y'] = df2['Доступность к продаже_x']
     df2['Стоимость'] = df2['Цена']
     df2['Отделка'] = df2['Отделка_y']
-    df_aparts = merge_df_1[merge_df_1['Код объекта'].str.contains('ОБ-АП')]
+    df_aparts = pd.merge(merge_df_1[merge_df_1['Код объекта'].str.contains('ОБ-АП')],data_site_aparts,how='left',on='Условный номер')
+    df_aparts.to_csv('DF3.csv', sep=';', encoding='cp1251', decimal=',', float_format='%.2f', index=False)
     data_site_aparts['площадь        ']=df_aparts['Площадь']
-    data_site_aparts['Доступность к продаже'] = df_aparts['Доступность к продаже']
+    data_site_aparts['Доступность к продаже_y'] = df_aparts['Доступность к продаже_x']
     data_site_aparts['Стоимость'] = df_aparts['Цена']
     data_site_aparts['Отделка'] = df_aparts['Отделка_y']
     for i in range(len(merge_df_1)):
@@ -146,21 +148,13 @@ if __name__ == '__main__':
         data = maintain_df(
             data)  # обрабатываем DataFrame (выбираем только Облака, преобразуем данные в float и отсеиваем лишние колонки)
         data = mer(data)  # прводим "левое" слияние с выгрузкой Васильева
-        sverka(data)
+        #sverka(data)
         #compare_df(data)
         print('Всё готово!')
         input('Для продолжения нажми Enter')
-    except SyntaxError:
-        pass
     except PermissionError:
         print('Ошибка! Закрой открытые файлы')
         input('Для продолжения нажми Enter')
         pass
-   # except LookupError:
-    #    print('Ошибка! Что-то не так с названиями колонок в выгрузке Васильева')
-     #   input('Для продолжения нажми Enter')
-      #  pass
-    except Warning:
-        print('Ошибка! Какая-то колонка не пишется')
-        input('Для продолжения нажми Enter')
-        pass
+
+
